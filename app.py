@@ -9,7 +9,8 @@ from sqlalchemy import create_engine, func
 from flask import Flask, jsonify
 
 # database set up
-engine = create_engine('sqlite:///hawaii.sqlite', echo=False)
+#engine = create_engine('sqlite:///hawaii.sqlite', echo=False)
+engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 
 # reflect an existing database into a new model
 Base = automap_base()
@@ -20,10 +21,10 @@ Base.prepare(engine, reflect=True)
 # Save a reference to the measurenment table as 'Measurement'
 Measurement = Base.classes.measurement
 # Save a reference to the station table as 'Station'
-Station = Base.classes.stations
+Station = Base.classes.station
 
 # Create our session (link) from Python to the DB
-session = Session(engine)
+# session = Session(engine)
 
 #################################################
 # Flask Setup
@@ -102,12 +103,14 @@ def stations():
 @app.route("/api/v1.0/tobs")
 def tobs():
     """Return a json list of Temperature Observations (tobs) for the previous year"""
-    # Query all the stations and for the given date. 
+    # Query all the stations and for the given date.
+    session=Session(engine)
     results = session.query(Measurement.station, Measurement.date, Measurement.tobs).\
                     group_by(Measurement.date).\
                     filter(Measurement.date >= year_ago).\
                     order_by(Measurement.station).all()
-                    
+    session.close()
+
     # Create a dictionary from the row data and append to a list of for the temperature data.
     temp_data = []
     for tobs_data in results:
@@ -124,8 +127,10 @@ def start_stats(start=None):
     """Return a json list of the minimum temperature, the average temperature, and the
     max temperature for a given start date"""
     # Query all the stations and for the given date. 
+    session=Session(engine)
     results = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs),func.avg(Measurement.tobs)).\
     filter(Measurement.date >= start).all()
+    session.close()
 
     # Create a dictionary from the row data and append to a list of for the temperature data.
     temp_stats = []
@@ -145,9 +150,12 @@ def calc_stats(start=None, end=None):
     and the max temperature for a given start-end date range."""
     
     # Query all the stations and for the given range of dates. 
+    session=Session(engine)
+    
     results = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs),func.avg(Measurement.tobs)).\
     filter(Measurement.date >= start).filter(Measurement.date <= end).all()
 
+    session.close()
     # Create a dictionary from the row data and append to a list of for the temperature data.
     begin_end_stats = []
     
